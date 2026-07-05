@@ -16,6 +16,7 @@ import {
 } from "@/components/icons";
 
 export default function Home() {
+  //Prueba
   const { restaurants, deleteRestaurant, isLoading } = useRestaurants();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCuisine, setSelectedCuisine] = useState("Todos");
