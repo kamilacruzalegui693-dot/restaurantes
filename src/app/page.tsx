@@ -363,24 +363,13 @@ export default function Home() {
                         <span>{restaurant.openingHours}</span>
                       </div>
 
-                      {/* Reservation & Delete Actions */}
-                      <div className="pt-3 flex items-center justify-between gap-2 border-t border-slate-100">
+                      {/* Reservation Action */}
+                      <div className="pt-3 border-t border-slate-100">
                         <button
                           onClick={() => openReservationModal(restaurant)}
-                          className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold text-xs py-2 px-3 rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-1.5"
+                          className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold text-xs py-2.5 px-3 rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-1.5"
                         >
                           <span>📅 Reservar Mesa</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`¿Estás seguro de que deseas eliminar "${restaurant.name}"?`)) {
-                              deleteRestaurant(restaurant.id);
-                            }
-                          }}
-                          className="text-xs text-slate-400 hover:text-red-500 font-medium p-2 rounded-lg hover:bg-red-50 transition-colors"
-                          title="Eliminar restaurante"
-                        >
-                          <TrashIcon size={14} />
                         </button>
                       </div>
                     </div>

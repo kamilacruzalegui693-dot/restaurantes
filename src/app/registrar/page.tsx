@@ -110,9 +110,19 @@ export default function RegisterRestaurant() {
 
   const MENU_CATEGORIES = ["Entradas", "Sopas y cremas", "Platos principales", "Postres", "Bebidas", "Otros"];
 
+  const formatSolesPrice = (val: string) => {
+    const clean = val.trim();
+    if (!clean) return "";
+    if (/^S\/\.\s?/i.test(clean) || /^S\/\s?/i.test(clean)) {
+      return clean;
+    }
+    return `S/. ${clean}`;
+  };
+
   const addMenuItem = () => {
     if (!menuForm.name.trim() || !menuForm.price.trim()) return;
-    setMenuItems((prev) => [...prev, { ...menuForm }]);
+    const formattedPrice = formatSolesPrice(menuForm.price);
+    setMenuItems((prev) => [...prev, { ...menuForm, price: formattedPrice }]);
     setMenuForm({ name: "", description: "", price: "", category: "Platos principales" });
   };
 

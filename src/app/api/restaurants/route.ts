@@ -14,6 +14,11 @@ const DEFAULT_RESTAURANTS = [
     priceRange: "$$$",
     imageUrl: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=60",
     createdAt: new Date(),
+    menuItems: [
+      { id: "1", name: "Fettuccine Alfredo", price: "S/. 38.00", category: "Platos principales", description: "Pasta fresca con crema y queso parmesano" },
+      { id: "2", name: "Pizza Margherita", price: "S/. 45.00", category: "Platos principales", description: "Salsa de tomate, mozzarella y albahaca fresca" },
+      { id: "3", name: "Tiramisú Tradicional", price: "S/. 22.00", category: "Postres", description: "Receta italiana original con café espresso" },
+    ],
   },
   {
     name: "Sushi Master",
@@ -27,6 +32,10 @@ const DEFAULT_RESTAURANTS = [
     priceRange: "$$$$",
     imageUrl: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=800&auto=format&fit=crop&q=60",
     createdAt: new Date(),
+    menuItems: [
+      { id: "1", name: "Acevichado Maki (10 cortes)", price: "S/. 42.00", category: "Platos principales", description: "Relleno de furai, palta y salsa acevichada" },
+      { id: "2", name: "Ramen Shoyu", price: "S/. 36.00", category: "Sopas y cremas", description: "Caldo artesanal con chashu de cerdo y huevo nitamago" },
+    ],
   },
   {
     name: "Tacos El Rey",
@@ -40,6 +49,10 @@ const DEFAULT_RESTAURANTS = [
     priceRange: "$$",
     imageUrl: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&auto=format&fit=crop&q=60",
     createdAt: new Date(),
+    menuItems: [
+      { id: "1", name: "Tacos al Pastor (3 unid)", price: "S/. 26.00", category: "Platos principales", description: "Carne marinada con piña y cilantro" },
+      { id: "2", name: "Quesadilla Gigante", price: "S/. 28.00", category: "Platos principales", description: "Queso oaxaca fundido con guacamole" },
+    ],
   },
   {
     name: "La Parrilla de Juan",
@@ -53,6 +66,10 @@ const DEFAULT_RESTAURANTS = [
     priceRange: "$$$",
     imageUrl: "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&auto=format&fit=crop&q=60",
     createdAt: new Date(),
+    menuItems: [
+      { id: "1", name: "Bife de Chorizo 400g", price: "S/. 68.00", category: "Platos principales", description: "Corte angus con papas doradas" },
+      { id: "2", name: "Choripán Artesanal", price: "S/. 18.00", category: "Entradas", description: "Con chimichurri de la casa" },
+    ],
   },
 ];
 
