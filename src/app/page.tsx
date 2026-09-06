@@ -21,6 +21,9 @@ export default function Home() {
   const [selectedCuisine, setSelectedCuisine] = useState("Todos");
   const [minRating, setMinRating] = useState(0);
 
+  // Public Menu Modal State
+  const [selectedRestForMenu, setSelectedRestForMenu] = useState<Restaurant | null>(null);
+
   // Reservation Modal State
   const [selectedRestForReservation, setSelectedRestForReservation] = useState<Restaurant | null>(null);
   const [resCustomerName, setResCustomerName] = useState("");
@@ -363,13 +366,24 @@ export default function Home() {
                         <span>{restaurant.openingHours}</span>
                       </div>
 
-                      {/* Reservation Action */}
-                      <div className="pt-3 border-t border-slate-100">
+                      {/* Public Actions: View Menu & Reserve */}
+                      <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
+                        <button
+                          onClick={() => setSelectedRestForMenu(restaurant)}
+                          className="flex-1 bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-semibold text-xs py-2.5 px-3 rounded-xl transition-all border border-slate-200/80 flex items-center justify-center gap-1"
+                        >
+                          <span>📖 Ver Carta</span>
+                          {restaurant.menuItems && restaurant.menuItems.length > 0 && (
+                            <span className="text-[10px] bg-slate-900 text-white px-1.5 py-0.2 rounded-full font-bold">
+                              {restaurant.menuItems.length}
+                            </span>
+                          )}
+                        </button>
                         <button
                           onClick={() => openReservationModal(restaurant)}
-                          className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold text-xs py-2.5 px-3 rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-1.5"
+                          className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold text-xs py-2.5 px-3 rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-1.5 text-center"
                         >
-                          <span>📅 Reservar Mesa</span>
+                          <span>📅 Reservar</span>
                         </button>
                       </div>
                     </div>
@@ -590,6 +604,88 @@ export default function Home() {
                   </div>
                 </form>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* PUBLIC MENU MODAL */}
+      {selectedRestForMenu && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh] border border-slate-100">
+            {/* Header */}
+            <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-orange-50 to-amber-50 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">{selectedRestForMenu.name}</h3>
+                <p className="text-xs font-semibold text-orange-600 mt-0.5">Carta de Menú & Platos</p>
+              </div>
+              <button
+                onClick={() => setSelectedRestForMenu(null)}
+                className="text-slate-400 hover:text-slate-700 text-lg font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Menu Items List */}
+            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+              {!selectedRestForMenu.menuItems || selectedRestForMenu.menuItems.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 text-sm space-y-2">
+                  <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-xl">
+                    🍽️
+                  </div>
+                  <p className="font-semibold text-slate-700">Carta en actualización</p>
+                  <p className="text-xs text-slate-400">Este restaurante aún no ha cargado platos en su carta digital.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {["Entradas", "Sopas y cremas", "Platos principales", "Postres", "Bebidas", "Otros"]
+                    .filter((cat) => selectedRestForMenu.menuItems?.some((item) => item.category === cat))
+                    .map((cat) => (
+                      <div key={cat} className="space-y-2">
+                        <div className="bg-slate-100 px-3 py-1.5 rounded-lg">
+                          <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">{cat}</span>
+                        </div>
+                        <div className="divide-y divide-slate-100">
+                          {selectedRestForMenu.menuItems
+                            ?.filter((item) => item.category === cat)
+                            .map((item, idx) => (
+                              <div key={idx} className="py-3 flex items-start justify-between gap-4">
+                                <div>
+                                  <p className="text-sm font-bold text-slate-900">{item.name}</p>
+                                  {item.description && (
+                                    <p className="text-xs text-slate-500 mt-0.5">{item.description}</p>
+                                  )}
+                                </div>
+                                <span className="text-sm font-bold text-emerald-600 shrink-0">
+                                  {item.price.startsWith("S/.") ? item.price : `S/. ${item.price}`}
+                                </span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-3">
+              <button
+                onClick={() => {
+                  const rest = selectedRestForMenu;
+                  setSelectedRestForMenu(null);
+                  openReservationModal(rest);
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl text-xs font-bold hover:from-orange-600 hover:to-amber-600 transition-all shadow-sm"
+              >
+                📅 Reservar Mesa Aquí
+              </button>
+              <button
+                onClick={() => setSelectedRestForMenu(null)}
+                className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
