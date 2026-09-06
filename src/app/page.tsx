@@ -60,15 +60,24 @@ export default function Home() {
             </span>
           </div>
 
-          <Link
-            href="/registrar"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white px-3 py-2.5 sm:px-5 rounded-xl font-medium hover:from-orange-600 hover:to-amber-600 shadow-md shadow-orange-100 hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5"
-            id="btn-register-restaurant"
-            title="Registrar Restaurante"
-          >
-            <PlusIcon size={18} />
-            <span className="hidden sm:inline">Registrar Restaurante</span>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/admin"
+              className="text-xs font-bold text-slate-600 hover:text-orange-600 px-3 py-2 rounded-xl hover:bg-slate-100 transition-colors"
+            >
+              Admin
+            </Link>
+
+            <Link
+              href="/registrar"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white px-3 py-2.5 sm:px-5 rounded-xl font-medium hover:from-orange-600 hover:to-amber-600 shadow-md shadow-orange-100 hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5"
+              id="btn-register-restaurant"
+              title="Registrar Restaurante"
+            >
+              <PlusIcon size={18} />
+              <span className="hidden sm:inline">Registrar Restaurante</span>
+            </Link>
+          </div>
         </div>
       </header>
 
