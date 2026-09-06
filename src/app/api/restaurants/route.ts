@@ -101,6 +101,7 @@ export async function POST(request: Request) {
       priceRange,
       imageUrl,
       description,
+      menuItems,
     } = body;
 
     // Basic validation
@@ -123,6 +124,7 @@ export async function POST(request: Request) {
       priceRange: priceRange || "$$",
       imageUrl: (imageUrl || "").trim() || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=60",
       description: description.trim(),
+      menuItems: Array.isArray(menuItems) ? menuItems : [],
       createdAt: new Date(),
     };
 

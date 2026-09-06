@@ -2,6 +2,14 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 
+export interface MenuItem {
+  id: string;
+  name: string;
+  description?: string;
+  price: string;
+  category: string;
+}
+
 export interface Restaurant {
   id: string;
   name: string;
@@ -14,6 +22,7 @@ export interface Restaurant {
   rating: number;
   priceRange: string; // "$", "$$", "$$$", "$$$$"
   imageUrl?: string;
+  menuItems?: MenuItem[];
 }
 
 interface RestaurantContextType {

@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useRestaurants } from "@/context/RestaurantContext";
-import { ArrowLeftIcon, StarIcon, FoodLogo } from "@/components/icons";
+import { useRestaurants, type MenuItem } from "@/context/RestaurantContext";
+import { ArrowLeftIcon, StarIcon, FoodLogo, PlusIcon, TrashIcon } from "@/components/icons";
 
 const CUISINES = [
   "Italiana",
@@ -68,6 +68,22 @@ export default function RegisterRestaurant() {
   const [imageUrl, setImageUrl] = useState("");
   const [description, setDescription] = useState("");
 
+  // Menu items state
+  const [menuItems, setMenuItems] = useState<Omit<MenuItem, "id">[]>([]);
+  const [menuForm, setMenuForm] = useState({ name: "", description: "", price: "", category: "Platos principales" });
+
+  const MENU_CATEGORIES = ["Entradas", "Sopas y cremas", "Platos principales", "Postres", "Bebidas", "Otros"];
+
+  const addMenuItem = () => {
+    if (!menuForm.name.trim() || !menuForm.price.trim()) return;
+    setMenuItems((prev) => [...prev, { ...menuForm }]);
+    setMenuForm({ name: "", description: "", price: "", category: "Platos principales" });
+  };
+
+  const removeMenuItem = (index: number) => {
+    setMenuItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // Error state
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -118,6 +134,7 @@ export default function RegisterRestaurant() {
       priceRange,
       imageUrl: imageUrl.trim() || undefined,
       description,
+      menuItems: menuItems.map((item, i) => ({ ...item, id: String(i + 1) })),
     });
 
     // Redirect to home page
@@ -446,6 +463,141 @@ export default function RegisterRestaurant() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Seccion 4: Carta de Menú */}
+            <div className="pt-6 border-t border-slate-100">
+              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                4. Carta de Menú
+              </h2>
+              <p className="text-xs text-slate-400 mb-4">Agrega los platos y bebidas que ofrece tu restaurante (opcional).</p>
+
+              {/* Mini-form para agregar ítem */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Nombre del ítem */}
+                  <div>
+                    <label htmlFor="menu-item-name" className="block text-xs font-semibold text-slate-600 mb-1">
+                      Nombre del plato / bebida *
+                    </label>
+                    <input
+                      type="text"
+                      id="menu-item-name"
+                      value={menuForm.name}
+                      onChange={(e) => setMenuForm((f) => ({ ...f, name: e.target.value }))}
+                      placeholder="Ej. Tagliatelle al ragú"
+                      className="block w-full px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                    />
+                  </div>
+
+                  {/* Precio */}
+                  <div>
+                    <label htmlFor="menu-item-price" className="block text-xs font-semibold text-slate-600 mb-1">
+                      Precio *
+                    </label>
+                    <input
+                      type="text"
+                      id="menu-item-price"
+                      value={menuForm.price}
+                      onChange={(e) => setMenuForm((f) => ({ ...f, price: e.target.value }))}
+                      placeholder="Ej. S/. 32.00"
+                      className="block w-full px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                    />
+                  </div>
+
+                  {/* Categoría */}
+                  <div>
+                    <label htmlFor="menu-item-category" className="block text-xs font-semibold text-slate-600 mb-1">
+                      Categoría
+                    </label>
+                    <select
+                      id="menu-item-category"
+                      value={menuForm.category}
+                      onChange={(e) => setMenuForm((f) => ({ ...f, category: e.target.value }))}
+                      className="block w-full px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                    >
+                      {MENU_CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Descripción corta */}
+                  <div>
+                    <label htmlFor="menu-item-desc" className="block text-xs font-semibold text-slate-600 mb-1">
+                      Descripción breve (opcional)
+                    </label>
+                    <input
+                      type="text"
+                      id="menu-item-desc"
+                      value={menuForm.description}
+                      onChange={(e) => setMenuForm((f) => ({ ...f, description: e.target.value }))}
+                      placeholder="Ej. Con salsa de tomate artesanal"
+                      className="block w-full px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Botón agregar ítem */}
+                <button
+                  type="button"
+                  onClick={addMenuItem}
+                  disabled={!menuForm.name.trim() || !menuForm.price.trim()}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white text-xs font-semibold rounded-xl hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+                  id="btn-add-menu-item"
+                >
+                  <PlusIcon size={15} />
+                  Agregar al menú
+                </button>
+              </div>
+
+              {/* Lista de ítems agregados */}
+              {menuItems.length > 0 && (
+                <div className="mt-4 border border-slate-200 rounded-2xl overflow-hidden">
+                  <div className="bg-slate-900 text-slate-300 px-4 py-2.5 flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider">Carta actual</span>
+                    <span className="text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full font-bold">
+                      {menuItems.length} {menuItems.length === 1 ? "plato" : "platos"}
+                    </span>
+                  </div>
+
+                  {/* Group by category */}
+                  {MENU_CATEGORIES.filter((cat) => menuItems.some((item) => item.category === cat)).map((cat) => (
+                    <div key={cat}>
+                      <div className="bg-slate-50 px-4 py-1.5 border-b border-slate-100">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">{cat}</span>
+                      </div>
+                      {menuItems
+                        .map((item, idx) => ({ item, idx }))
+                        .filter(({ item }) => item.category === cat)
+                        .map(({ item, idx }) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between px-4 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors group"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-slate-800 truncate">{item.name}</p>
+                              {item.description && (
+                                <p className="text-xs text-slate-400 truncate">{item.description}</p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 ml-4 shrink-0">
+                              <span className="text-sm font-bold text-emerald-600">{item.price}</span>
+                              <button
+                                type="button"
+                                onClick={() => removeMenuItem(idx)}
+                                className="text-slate-300 hover:text-red-500 transition-colors p-1 rounded-lg hover:bg-red-50"
+                                title="Eliminar"
+                              >
+                                <TrashIcon size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Botones de Envío */}
