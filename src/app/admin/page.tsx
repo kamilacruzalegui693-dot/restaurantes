@@ -13,6 +13,21 @@ import {
   ArrowLeftIcon,
 } from "@/components/icons";
 
+export interface ReservationItem {
+  id: string;
+  restaurantId: string;
+  restaurantName: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  date: string;
+  time: string;
+  guests: number;
+  notes?: string;
+  status: "pending" | "confirmed" | "cancelled";
+  createdAt?: string;
+}
+
 export default function AdminPage() {
   const { restaurants, deleteRestaurant, isLoading: loadingRestaurants, refreshRestaurants } = useRestaurants();
 
@@ -26,14 +41,63 @@ export default function AdminPage() {
   const [adminUsername, setAdminUsername] = useState("");
 
   // Dashboard States
+  const [activeTab, setActiveTab] = useState<"restaurants" | "reservations">("restaurants");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRestaurantMenu, setSelectedRestaurantMenu] = useState<Restaurant | null>(null);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+
+  // Reservations States
+  const [reservations, setReservations] = useState<ReservationItem[]>([]);
+  const [loadingReservations, setLoadingReservations] = useState(false);
 
   // Check auth status on mount
   useEffect(() => {
     checkSession();
   }, []);
+
+  const fetchReservations = async () => {
+    try {
+      setLoadingReservations(true);
+      const res = await fetch("/api/reservations");
+      if (res.ok) {
+        const data = await res.json();
+        setReservations(data);
+      }
+    } catch (err) {
+      console.error("Error fetching reservations:", err);
+    } finally {
+      setLoadingReservations(false);
+    }
+  };
+
+  const handleUpdateReservationStatus = async (id: string, status: "confirmed" | "cancelled" | "pending") => {
+    try {
+      const res = await fetch(`/api/reservations/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) {
+        setReservations((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, status } : r))
+        );
+      }
+    } catch (err) {
+      console.error("Error updating reservation status:", err);
+    }
+  };
+
+  const handleDeleteReservation = async (id: string) => {
+    if (!confirm("¿Deseas eliminar esta reserva definitivamente?")) return;
+    try {
+      const res = await fetch(`/api/reservations/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setReservations((prev) => prev.filter((r) => r.id !== id));
+      }
+    } catch (err) {
+      console.error("Error deleting reservation:", err);
+    }
+  };
 
   const checkSession = async () => {
     try {
@@ -43,6 +107,7 @@ export default function AdminPage() {
       if (data.authenticated) {
         setIsAuthenticated(true);
         setAdminUsername(data.username || "admin");
+        fetchReservations();
       } else {
         setIsAuthenticated(false);
       }
@@ -85,6 +150,7 @@ export default function AdminPage() {
       setAdminUsername(data.username || "admin");
       setPasswordInput("");
       refreshRestaurants();
+      fetchReservations();
     } catch (err) {
       console.error("Error al iniciar sesión:", err);
       setLoginError("Error de conexión al servidor");
@@ -291,19 +357,52 @@ export default function AdminPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Restaurantes</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Restaurantes</span>
             <p className="text-3xl font-black text-white mt-2">{totalRestaurants}</p>
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Platos / Menú</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Platos / Menú</span>
             <p className="text-3xl font-black text-amber-400 mt-2">{totalMenuItems}</p>
+          </div>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Reservas Recibidas</span>
+            <p className="text-3xl font-black text-emerald-400 mt-2">{reservations.length}</p>
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Calificación Promedio</span>
             <p className="text-3xl font-black text-orange-400 mt-2">{avgRating} ★</p>
           </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+          <button
+            onClick={() => setActiveTab("restaurants")}
+            className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all ${
+              activeTab === "restaurants"
+                ? "bg-orange-500 text-white shadow-md shadow-orange-500/20"
+                : "bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800"
+            }`}
+          >
+            Restaurantes ({restaurants.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("reservations")}
+            className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
+              activeTab === "reservations"
+                ? "bg-orange-500 text-white shadow-md shadow-orange-500/20"
+                : "bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800"
+            }`}
+          >
+            <span>Reservas Recibidas ({reservations.length})</span>
+            {reservations.filter((r) => r.status === "pending").length > 0 && (
+              <span className="bg-amber-400 text-slate-950 font-black text-[10px] px-1.5 py-0.5 rounded-full">
+                {reservations.filter((r) => r.status === "pending").length} nuevas
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Filter / Search Bar */}
@@ -313,37 +412,42 @@ export default function AdminPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por nombre, cocina o dirección..."
+            placeholder={
+              activeTab === "restaurants"
+                ? "Buscar por nombre, cocina o dirección..."
+                : "Buscar reservas por cliente, teléfono o restaurante..."
+            }
             className="w-full bg-transparent text-sm text-white placeholder-slate-500 focus:outline-none"
           />
         </div>
 
-        {/* Restaurants Table */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-          {loadingRestaurants ? (
-            <div className="p-12 text-center text-slate-400 text-sm">
-              <div className="w-8 h-8 border-3 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-              Cargando restaurantes desde MongoDB...
-            </div>
-          ) : filteredRestaurants.length === 0 ? (
-            <div className="p-12 text-center text-slate-400 text-sm">
-              No se encontraron restaurantes registrados.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-300">
-                <thead className="bg-slate-950 text-slate-400 text-xs uppercase font-bold tracking-wider border-b border-slate-800">
-                  <tr>
-                    <th className="px-6 py-4">Restaurante</th>
-                    <th className="px-6 py-4">Cocina & Precio</th>
-                    <th className="px-6 py-4">Ubicación & Contacto</th>
-                    <th className="px-6 py-4">Carta Menú</th>
-                    <th className="px-6 py-4 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {filteredRestaurants.map((restaurant) => (
-                    <tr key={restaurant.id} className="hover:bg-slate-800/40 transition-colors">
+        {/* TAB 1: RESTAURANTS TABLE */}
+        {activeTab === "restaurants" && (
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+            {loadingRestaurants ? (
+              <div className="p-12 text-center text-slate-400 text-sm">
+                <div className="w-8 h-8 border-3 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                Cargando restaurantes desde MongoDB...
+              </div>
+            ) : filteredRestaurants.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 text-sm">
+                No se encontraron restaurantes registrados.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-slate-300">
+                  <thead className="bg-slate-950 text-slate-400 text-xs uppercase font-bold tracking-wider border-b border-slate-800">
+                    <tr>
+                      <th className="px-6 py-4">Restaurante</th>
+                      <th className="px-6 py-4">Cocina & Precio</th>
+                      <th className="px-6 py-4">Ubicación & Contacto</th>
+                      <th className="px-6 py-4">Carta Menú</th>
+                      <th className="px-6 py-4 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {filteredRestaurants.map((restaurant) => (
+                      <tr key={restaurant.id} className="hover:bg-slate-800/40 transition-colors">
                       {/* Name & Cover */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -415,6 +519,128 @@ export default function AdminPage() {
             </div>
           )}
         </div>
+        )}
+
+        {/* TAB 2: RESERVATIONS TABLE */}
+        {activeTab === "reservations" && (
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+            {loadingReservations ? (
+              <div className="p-12 text-center text-slate-400 text-sm">
+                <div className="w-8 h-8 border-3 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                Cargando reservas desde MongoDB...
+              </div>
+            ) : reservations.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 text-sm">
+                No se han recibido reservas hasta el momento.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-slate-300">
+                  <thead className="bg-slate-950 text-slate-400 text-xs uppercase font-bold tracking-wider border-b border-slate-800">
+                    <tr>
+                      <th className="px-6 py-4">Cliente & Contacto</th>
+                      <th className="px-6 py-4">Restaurante</th>
+                      <th className="px-6 py-4">Fecha & Hora</th>
+                      <th className="px-6 py-4">Personas & Notas</th>
+                      <th className="px-6 py-4">Estado</th>
+                      <th className="px-6 py-4 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {reservations
+                      .filter(
+                        (r) =>
+                          r.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          r.customerPhone.includes(searchQuery) ||
+                          r.restaurantName.toLowerCase().includes(searchQuery.toLowerCase())
+                      )
+                      .map((res) => (
+                        <tr key={res.id} className="hover:bg-slate-800/40 transition-colors">
+                          {/* Customer */}
+                          <td className="px-6 py-4">
+                            <p className="font-bold text-white leading-tight">{res.customerName}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">📞 {res.customerPhone}</p>
+                            {res.customerEmail && (
+                              <p className="text-[11px] text-slate-500">{res.customerEmail}</p>
+                            )}
+                          </td>
+
+                          {/* Restaurant */}
+                          <td className="px-6 py-4 font-semibold text-orange-400 text-xs">
+                            {res.restaurantName}
+                          </td>
+
+                          {/* Date & Time */}
+                          <td className="px-6 py-4 text-xs">
+                            <p className="font-bold text-slate-200">📅 {res.date}</p>
+                            <p className="text-slate-400 mt-0.5">⏰ {res.time} hs</p>
+                          </td>
+
+                          {/* Guests & Notes */}
+                          <td className="px-6 py-4 text-xs">
+                            <span className="font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-md">
+                              {res.guests} {res.guests === 1 ? "persona" : "personas"}
+                            </span>
+                            {res.notes && (
+                              <p className="text-slate-400 italic mt-1 max-w-xs truncate">
+                                "{res.notes}"
+                              </p>
+                            )}
+                          </td>
+
+                          {/* Status */}
+                          <td className="px-6 py-4">
+                            <span
+                              className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                                res.status === "confirmed"
+                                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                  : res.status === "cancelled"
+                                  ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                                  : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                              }`}
+                            >
+                              {res.status === "confirmed"
+                                ? "✓ Confirmada"
+                                : res.status === "cancelled"
+                                ? "✕ Cancelada"
+                                : "⏳ Pendiente"}
+                            </span>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="px-6 py-4 text-right space-x-2">
+                            {res.status !== "confirmed" && (
+                              <button
+                                onClick={() => handleUpdateReservationStatus(res.id, "confirmed")}
+                                className="text-xs font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-1 rounded-lg transition-colors"
+                              >
+                                Confirmar
+                              </button>
+                            )}
+                            {res.status !== "cancelled" && (
+                              <button
+                                onClick={() => handleUpdateReservationStatus(res.id, "cancelled")}
+                                className="text-xs font-bold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2.5 py-1 rounded-lg transition-colors"
+                              >
+                                Cancelar
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeleteReservation(res.id)}
+                              className="text-xs text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 p-1.5 rounded-lg transition-colors"
+                              title="Eliminar registro"
+                            >
+                              <TrashIcon size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {/* MENU ITEMS MODAL */}

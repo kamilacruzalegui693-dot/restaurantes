@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { useRestaurants } from "@/context/RestaurantContext";
+import { useRestaurants, Restaurant } from "@/context/RestaurantContext";
 import {
   FoodLogo,
   PlusIcon,
@@ -16,11 +16,80 @@ import {
 } from "@/components/icons";
 
 export default function Home() {
-  //Prueba
   const { restaurants, deleteRestaurant, isLoading } = useRestaurants();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCuisine, setSelectedCuisine] = useState("Todos");
   const [minRating, setMinRating] = useState(0);
+
+  // Reservation Modal State
+  const [selectedRestForReservation, setSelectedRestForReservation] = useState<Restaurant | null>(null);
+  const [resCustomerName, setResCustomerName] = useState("");
+  const [resCustomerPhone, setResCustomerPhone] = useState("");
+  const [resCustomerEmail, setResCustomerEmail] = useState("");
+  const [resDate, setResDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [resTime, setResTime] = useState("13:00");
+  const [resGuests, setResGuests] = useState(2);
+  const [resNotes, setResNotes] = useState("");
+  const [resError, setResError] = useState("");
+  const [resSuccess, setResSuccess] = useState(false);
+  const [isSubmittingRes, setIsSubmittingRes] = useState(false);
+
+  const openReservationModal = (restaurant: Restaurant) => {
+    setSelectedRestForReservation(restaurant);
+    setResCustomerName("");
+    setResCustomerPhone("");
+    setResCustomerEmail("");
+    setResDate(new Date().toISOString().split("T")[0]);
+    setResTime("13:00");
+    setResGuests(2);
+    setResNotes("");
+    setResError("");
+    setResSuccess(false);
+  };
+
+  const handleCreateReservation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRestForReservation) return;
+
+    if (!resCustomerName.trim() || !resCustomerPhone.trim() || !resDate || !resTime) {
+      setResError("Por favor completa tu nombre, teléfono, fecha y hora.");
+      return;
+    }
+
+    try {
+      setIsSubmittingRes(true);
+      setResError("");
+
+      const res = await fetch("/api/reservations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurantId: selectedRestForReservation.id,
+          customerName: resCustomerName,
+          customerPhone: resCustomerPhone,
+          customerEmail: resCustomerEmail,
+          date: resDate,
+          time: resTime,
+          guests: resGuests,
+          notes: resNotes,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Fallo al realizar la reserva");
+      }
+
+      setResSuccess(true);
+    } catch (err: unknown) {
+      console.error("Error registrando reserva:", err);
+      const msg = err instanceof Error ? err.message : "Error al procesar reserva";
+      setResError(msg);
+    } finally {
+      setIsSubmittingRes(false);
+    }
+  };
 
   // Extract unique cuisines for filter buttons
   const cuisines = useMemo(() => {
@@ -294,19 +363,24 @@ export default function Home() {
                         <span>{restaurant.openingHours}</span>
                       </div>
 
-                      {/* Delete Action button */}
-                      <div className="pt-2 flex justify-end">
+                      {/* Reservation & Delete Actions */}
+                      <div className="pt-3 flex items-center justify-between gap-2 border-t border-slate-100">
+                        <button
+                          onClick={() => openReservationModal(restaurant)}
+                          className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold text-xs py-2 px-3 rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <span>📅 Reservar Mesa</span>
+                        </button>
                         <button
                           onClick={() => {
                             if (confirm(`¿Estás seguro de que deseas eliminar "${restaurant.name}"?`)) {
                               deleteRestaurant(restaurant.id);
                             }
                           }}
-                          className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-500 font-medium px-2 py-1.5 rounded-lg hover:bg-red-50 transition-all duration-200"
+                          className="text-xs text-slate-400 hover:text-red-500 font-medium p-2 rounded-lg hover:bg-red-50 transition-colors"
                           title="Eliminar restaurante"
                         >
                           <TrashIcon size={14} />
-                          <span>Eliminar</span>
                         </button>
                       </div>
                     </div>
@@ -334,6 +408,203 @@ export default function Home() {
           </div>
         </div>
       </footer>
+      {/* RESERVATION MODAL */}
+      {selectedRestForReservation && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh] border border-slate-100">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-orange-50 to-amber-50 flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="bg-orange-500 text-white p-1.5 rounded-lg">
+                    <ClockIcon size={16} />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                    Reservar Mesa
+                  </h3>
+                </div>
+                <p className="text-xs font-semibold text-slate-500 mt-1">
+                  {selectedRestForReservation.name}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedRestForReservation(null)}
+                className="text-slate-400 hover:text-slate-700 text-lg font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto flex-1">
+              {resSuccess ? (
+                <div className="py-8 text-center space-y-4">
+                  <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+                    ✓
+                  </div>
+                  <h4 className="text-lg font-bold text-slate-900">¡Reserva Registrada con Éxito!</h4>
+                  <p className="text-slate-600 text-sm max-w-sm mx-auto">
+                    Tu solicitud de reserva para <strong>{resGuests} persona(s)</strong> el día <strong>{resDate}</strong> a las <strong>{resTime} hs</strong> ha sido enviada al restaurante.
+                  </p>
+                  <button
+                    onClick={() => setSelectedRestForReservation(null)}
+                    className="mt-4 px-6 py-2.5 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition-colors"
+                  >
+                    Entendido / Cerrar
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleCreateReservation} className="space-y-5">
+                  {/* Schedule Banner */}
+                  <div className="bg-amber-50 border border-amber-200/70 rounded-2xl p-3.5 flex items-start gap-2.5">
+                    <ClockIcon size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-bold text-amber-900">Horario del restaurante</p>
+                      <p className="text-xs text-amber-800 mt-0.5">
+                        {selectedRestForReservation.openingHours || "12:00 - 23:00"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {resError && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs font-medium text-red-600">
+                      {resError}
+                    </div>
+                  )}
+
+                  {/* Nombre */}
+                  <div>
+                    <label htmlFor="res-name" className="block text-xs font-semibold text-slate-700 mb-1">
+                      Nombre Completo *
+                    </label>
+                    <input
+                      type="text"
+                      id="res-name"
+                      required
+                      value={resCustomerName}
+                      onChange={(e) => setResCustomerName(e.target.value)}
+                      placeholder="Ej. María García"
+                      className="block w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                    />
+                  </div>
+
+                  {/* Contacto Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="res-phone" className="block text-xs font-semibold text-slate-700 mb-1">
+                        Teléfono *
+                      </label>
+                      <input
+                        type="text"
+                        id="res-phone"
+                        required
+                        value={resCustomerPhone}
+                        onChange={(e) => setResCustomerPhone(e.target.value)}
+                        placeholder="Ej. +51 987 654 321"
+                        className="block w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="res-email" className="block text-xs font-semibold text-slate-700 mb-1">
+                        Correo (Opcional)
+                      </label>
+                      <input
+                        type="email"
+                        id="res-email"
+                        value={resCustomerEmail}
+                        onChange={(e) => setResCustomerEmail(e.target.value)}
+                        placeholder="correo@ejemplo.com"
+                        className="block w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Fecha y Hora Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label htmlFor="res-date" className="block text-xs font-semibold text-slate-700 mb-1">
+                        Fecha *
+                      </label>
+                      <input
+                        type="date"
+                        id="res-date"
+                        required
+                        min={new Date().toISOString().split("T")[0]}
+                        value={resDate}
+                        onChange={(e) => setResDate(e.target.value)}
+                        className="block w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="res-time" className="block text-xs font-semibold text-slate-700 mb-1">
+                        Hora *
+                      </label>
+                      <input
+                        type="time"
+                        id="res-time"
+                        required
+                        value={resTime}
+                        onChange={(e) => setResTime(e.target.value)}
+                        className="block w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="res-guests" className="block text-xs font-semibold text-slate-700 mb-1">
+                        Personas *
+                      </label>
+                      <select
+                        id="res-guests"
+                        value={resGuests}
+                        onChange={(e) => setResGuests(Number(e.target.value))}
+                        className="block w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                      >
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20].map((num) => (
+                          <option key={num} value={num}>
+                            {num} {num === 1 ? "persona" : "personas"}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Notas */}
+                  <div>
+                    <label htmlFor="res-notes" className="block text-xs font-semibold text-slate-700 mb-1">
+                      Notas especiales (Opcional)
+                    </label>
+                    <input
+                      type="text"
+                      id="res-notes"
+                      value={resNotes}
+                      onChange={(e) => setResNotes(e.target.value)}
+                      placeholder="Ej. Mesa cerca a la ventana, alérgico a los mariscos, etc."
+                      className="block w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRestForReservation(null)}
+                      className="px-5 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmittingRes}
+                      className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl text-xs font-bold hover:from-orange-600 hover:to-amber-600 shadow-md shadow-orange-100 disabled:opacity-50 transition-all"
+                    >
+                      {isSubmittingRes ? "Validando y enviando..." : "Confirmar Reserva"}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
